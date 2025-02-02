@@ -1,31 +1,28 @@
 import ply.lex as lex
 import ply.yacc as yacc
 
-# Tokens
+# Diccionario de variables
+variables = {}
+
+# ----------------------
+# Analizador Léxico (Lex)
+# ----------------------
 tokens = (
-    'ID', 'NUMBER',
-    'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'EQUALS'
+    'NUMBER', 'ID'
 )
 
-# Precedencia de operadores
-precedence = (
-    ('left', 'PLUS', 'MINUS'),
-    ('left', 'TIMES', 'DIVIDE'),
-)
+# Literales
+literals = ['+', '-', '*', '/', '=', ':']
 
-# Reglas de los tokens
 t_ignore = ' \t'
-
-t_PLUS = r'\+'
-t_MINUS = r'-'
-t_TIMES = r'\*'
-t_DIVIDE = r'/'
-t_EQUALS = r'='
-t_ID = r'[a-zA-Z_][a-zA-Z0-9_]*'
 
 def t_NUMBER(t):
     r'\d+'
     t.value = int(t.value)
+    return t
+
+def t_ID(t):
+    r'[a-zA-Z][a-zA-Z0-9]*'
     return t
 
 def t_newline(t):
@@ -33,53 +30,74 @@ def t_newline(t):
     t.lexer.lineno += len(t.value)
 
 def t_error(t):
-    print(f"Caracter inválido: {t.value[0]}")
+    print(f"Caracter ilegal: '{t.value[0]}'")
     t.lexer.skip(1)
 
 lexer = lex.lex()
 
-# Reglas de la gramática
-def p_statement_assign(p):
-    'statement : ID EQUALS expression'
-    print(f"Asignación: {p[1]} = {p[3]}")
+# ----------------------
+# Analizador Sintáctico (Yacc)
+# ----------------------
+precedence = (
+    ('right', '='),
+    ('left', '+', '-'),
+    ('left', '*', '/')
+)
 
-def p_expression_binop(p):
-    '''expression : expression PLUS expression
-                  | expression MINUS expression
-                  | expression TIMES expression
-                  | expression DIVIDE expression'''
-    if p[2] == '+':
+def p_program(p):
+    '''program : statement_list'''
+    pass
+
+def p_statement_list(p):
+    '''statement_list : statement
+                      | statement_list statement'''
+    pass
+
+def p_statement(p):
+    '''statement : assignment
+                 | expression ':' '''
+    if len(p) == 3:
+        print(f"Resultado: {p[1]}")
+
+def p_assignment(p):
+    '''assignment : ID '=' expression'''
+    variables[p[1]] = p[3]
+    print(f"Asignado: {p[1]} = {p[3]}")
+
+def p_expression(p):
+    '''expression : NUMBER
+                  | ID
+                  | expression '+' expression
+                  | expression '-' expression
+                  | expression '*' expression
+                  | expression '/' expression'''
+    if len(p) == 2:
+        if isinstance(p[1], str):
+            p[0] = variables.get(p[1], 0)
+        else:
+            p[0] = p[1]
+    elif p[2] == '+':
         p[0] = p[1] + p[3]
     elif p[2] == '-':
         p[0] = p[1] - p[3]
     elif p[2] == '*':
         p[0] = p[1] * p[3]
     elif p[2] == '/':
-        p[0] = p[1] / p[3] if p[3] != 0 else "Error: División por cero"
-
-def p_expression_number(p):
-    'expression : NUMBER'
-    p[0] = p[1]
-
-def p_expression_id(p):
-    'expression : ID'
-    p[0] = p[1]
+        p[0] = p[1] / p[3] if p[3] != 0 else print("Error: División por cero")
 
 def p_error(p):
     print("Error de sintaxis")
 
 parser = yacc.yacc()
 
-# Pruebas
-def run_parser():
-    while True:
-        try:
-            s = input('>> ')
-        except EOFError:
-            break
-        if not s:
-            continue
-        parser.parse(s)
-
-if __name__ == '__main__':
-    run_parser()
+# ----------------------
+# Pruebas interactivas
+# ----------------------
+while True:
+    try:
+        s = input('>> ')
+    except EOFError:
+        break
+    if not s:
+        continue
+    parser.parse(s)
