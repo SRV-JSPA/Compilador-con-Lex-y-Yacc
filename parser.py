@@ -1,17 +1,12 @@
 import ply.lex as lex
 import ply.yacc as yacc
 
-# Diccionario de variables
 variables = {}
 
-# ----------------------
-# Analizador Léxico (Lex)
-# ----------------------
 tokens = (
     'NUMBER', 'ID'
 )
 
-# Literales
 literals = ['+', '-', '*', '/', '=', ':']
 
 t_ignore = ' \t'
@@ -35,9 +30,6 @@ def t_error(t):
 
 lexer = lex.lex()
 
-# ----------------------
-# Analizador Sintáctico (Yacc)
-# ----------------------
 precedence = (
     ('right', '='),
     ('left', '+', '-'),
@@ -90,9 +82,6 @@ def p_error(p):
 
 parser = yacc.yacc()
 
-# ----------------------
-# Pruebas interactivas
-# ----------------------
 while True:
     try:
         s = input('>> ')
